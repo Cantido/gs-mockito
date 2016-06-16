@@ -1,0 +1,11 @@
+GEM
+  specs:
+
+PLATFORMS
+  x86-mingw32
+
+DEPENDENCIES
+  asciidoctor-pdf
+
+BUNDLED WITH
+   1.11.2
