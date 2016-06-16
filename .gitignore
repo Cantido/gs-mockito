@@ -1,0 +1,3 @@
+# The files that can be derived from an adoc file
+*.html
+*.pdf
