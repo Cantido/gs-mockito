@@ -1,0 +1,191 @@
+= Getting Started with Mockito
+Robert Richter
+v0.1, June 2015, Written for Mockito 1.10.19
+:toc:
+
+Mockito is a framework for creating mock objects in Java. When used in unit
+tests, Mockito makes it significantly easier to isolate the code that you
+actually want to test from everything else that could possibly break. This
+guide is written for developers who are familiar with Java, and who can write
+a simple JUnit test case, and who want to know how to take their unit testing
+to the next level.
+
+Before you get started learning about how to you use Mockito, here's how
+to get it:
+
+[source, xml]
+.In the dependencies section of your pom.xml file
+----
+<dependency>
+  <groupId>org.mockito</groupId>
+  <artifactId>mockito-all</artifactId>
+  <version>1.10.19</version>
+  <scope>test</scope>
+</dependency>
+----
+
+== Introduction to Mocks
+
+A mock object created by Mockito simply subclasses another object, and
+overrides every method to do nothing. Imagine if you had an object like this:
+
+[source, java]
+----
+class MyObject {
+  private int value = 0;
+  private MyBean bean;
+  
+  public int getValue() {
+    return value;
+  }
+  
+  public void setValue(int nextValue) {
+    this.value = nextValue;
+  }
+  
+  public MyBean getBean() {
+    return bean;
+  }
+  
+  public void setBean(MyBean nextBean) {
+    this.bean = nextBean;
+  }
+}
+----
+
+And imagine that another class of yours used this object. You don't want to
+worry about what kind of plumbing this object has, you just want something
+to pass around in the class that you actually care about. In order to create
+a mock of this object, you call the aptly-named method `Mockito.mock()`:
+
+[source, java]
+----
+import static org.mockito.Mockito.mock;
+
+class OtherObjectTest {
+  MyObject theMock = mock(MyObject.class);
+}
+----
+
+The `Mockito.mock()` static method takes a `Class` object, and returns an
+instance of that class that does absolutely nothing.
+
+NOTE: There are several ways to create mock objects, and some of them buy you
+a lot more power and flexibility. They require a few other things in your
+test class that we haven't covered yet, but those other strategies all end
+up calling `Mockito.mock()`.
+
+For Mockito, "`absolutely
+nothing`" means that it creates a subclass that is something like this:
+
+[source, java]
+----
+class MyObjectMock extends MyObject {
+  public int getValue() {
+    return 0;
+  }
+  
+  public void setValue(int nextValue) {
+    // blank
+  }
+  
+  public MyBean getBean() {
+    return null;
+  }
+  
+  public void setBean(MyBean nextBean) {
+    // blank
+  }
+}
+----
+
+That means that calling `setX()` methods on a mock object won't affect future
+calls to `getX()`, and you better be careful if your code calls `getBean()`
+and then does something with the result. Every mock method does as little as
+possible, and returns the appropriate "`empty`" value for its return type.
+
+.Empty values for each return type
+[horizontal]
+Numeric primitives:: Returns zero
+`char` primitive:: Returns the null byte (`\0`)
+`String` objects:: Returns an empty string (`""`)
+`Collection` classes:: Returns an empty collection
+Any other object:: Returns `null`
+
+On their own, mocks are sort of useful, but the `null` values will make your
+tests throw `NullPointerExceptions` all over the place. The other half of this
+puzzle is the static method `Mockito.when()`, described in the next section.
+
+== Making mocks return what you want
+
+The `Mockito.mock()` method gives you an object that does absolutely nothing.
+You can use it instead of some big nasty object that has a complicated
+constructor, requires a container, or is just an object that you don't wish to
+care about when you're testing other pieces of your app.
+
+The problem, of course, is that an object that does absolutely nothing
+isn't very useful. We have a stand-in for all the objects that our test
+subject works with, but we still need to control how our test subject behaves,
+which requires input and output to these objects. To tell your mock objects
+how to behave, and still skip over the complicated logic in the class you
+just mocked, you use the static method `Mockito.when()`.
+
+=== "`When,`" Then What?
+
+Mockito's `when()` returns an object that, in itself, we don't care about. We
+only care about the method that we chain on to `when()`, called `thenReturn()`.
+The name of the methods `when().thenReturn()`, chained like that, form the
+basis of the commands that you give to your mock object. Here's a full example:
+
+[source, java]
+----
+@Test
+public void testStubbing() {
+
+  MyObject myMock = mock(MyObject.class);
+  when(myMock.getValue()).thenReturn(42);
+  
+  assertEquals(42, myMock.getValue())
+}
+----
+
+Alarm bells are probably going off in your head. Yes, the syntax is unusual.
+However, this is the most concise way to tell our mock how to behave. In order
+to grasp this command, you have to let go of a little bit of your Java
+knowledge for just a minute. Instead of thinking of `myMock.getValue()` as
+returning any value, think of it as _identifying the method that you want to
+change_.
+
+IMPORTANT: The syntax of `when(mock.method()).thenReturn(value)` is the
+trickiest thing to learn when you are learning Mockito. The argument to `when()`
+is the method call that you're changing. The `thenReturn(value)` tells the
+mock what you want that method to do.
+
+So when we call `when(myMock.getValue()).thenReturn(expectedValue)`, we have
+instructed the mock object `myMock` to return `expectedValue` when its
+`getValue()` method is called. That lasts *for the life of the mock*. That
+means that calling `setValue()` will *not* change the result of `getValue()`.
+
+CAUTION: Mocking an object with getters and setters breaks the contact of those
+getters and setters. Setters will not change any value, and getters will always
+return what you tell them to. If you're ever calling a setter on a mock object,
+it is probably a mistake.
+
+[source, java]
+----
+@Test
+public void thisTestPasses() {
+
+  MyObject myMock = mock(MyObject.class);
+  when(myMock.getValue()).thenReturn(42);
+
+  // The mock will now behave as instructed
+  assertTrue(myMock.getValue() == 42);
+  
+  // This does nothing, since myMock is a mock
+  myMock.setValue(13);
+  
+  // getValue still returns 42!
+  assertTrue(myMock.getValue() == 42);
+}
+----
