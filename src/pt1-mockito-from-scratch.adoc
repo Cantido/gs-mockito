@@ -1,0 +1,289 @@
+= Mockito from Scratch
+
+[partintro]
+--
+Mockito is a framework for creating mock objects in Java. When used in unit
+tests, Mockito makes it significantly easier to isolate the code that you
+actually want to test from everything else that could possibly break. This
+guide is written for developers who are familiar with Java, and who can write
+a simple JUnit test case, and who want to know how to take their unit testing
+to the next level.
+
+Before you get started learning about how to you use Mockito, add this to your `pom.xml`:
+
+[source, xml]
+.In the dependencies section of your pom.xml file
+----
+<dependency>
+  <groupId>org.mockito</groupId>
+  <artifactId>mockito-all</artifactId>
+  <version>1.10.19</version>
+  <scope>test</scope>
+</dependency>
+----
+--
+
+== Introduction to Mocks
+
+A mock object created by Mockito simply subclasses another object, and
+overrides every method to do nothing. Imagine if you had an object like this:
+
+[source, java]
+----
+class MyObject {
+  public int getValue() {
+    return db.loadValue();
+  }
+  
+  public void setValue(int nextValue) {
+    complicatedValidation(nextValue);
+    db.saveValue(nextValue);
+  }
+  
+  public MyBean getBean() {
+    MyBean bean = MyBean.staticFactoryThatCallsService();
+    bean.longRunningLoad();
+    return bean;
+  }
+  
+  public void setBean(MyBean nextBean) {
+    db.saveValue(nextBean);
+  }
+}
+----
+
+And imagine that another class of yours used this object. You don't want to
+worry about what kind of plumbing this object has, you just want something
+to pass around in the class that you actually care about. In order to create
+a mock of this object, you call the aptly-named method `Mockito.mock()`:
+
+[source, java]
+----
+import static org.mockito.Mockito.mock;
+
+class OtherObjectTest {
+  MyObject theMock = mock(MyObject.class);
+}
+----
+
+The `Mockito.mock()` static method takes a `Class` object, and returns an
+instance of that class that does absolutely nothing.
+
+NOTE: There are several ways to create mock objects, and some of them buy you
+a lot more power and flexibility. They require a few other things in your
+test class that we haven't covered yet, but those other strategies all end
+up calling `Mockito.mock()`.
+
+For Mockito, "`absolutely
+nothing`" means that it creates a subclass that is something like this:
+
+[source, java]
+----
+class MyObjectMock extends MyObject {
+  public int getValue() {
+    return 0;
+  }
+  
+  public void setValue(int nextValue) {
+    // blank
+  }
+  
+  public MyBean getBean() {
+    return null;
+  }
+  
+  public void setBean(MyBean nextBean) {
+    // blank
+  }
+}
+----
+
+That means that calling `setX()` methods on a mock object won't affect future
+calls to `getX()`, and you better be careful if your code calls `getBean()`
+and then does something with the result. Every mock method does as little as
+possible, and returns the appropriate "`empty`" value for its return type.
+
+.Empty values for each return type
+[horizontal]
+Numeric primitives:: Returns zero
+`char` primitive:: Returns the null byte (`\0`)
+`String` objects:: Returns an empty string (`""`)
+`Collection` classes:: Returns an empty collection
+Any other object:: Returns `null`
+
+On their own, mocks are sort of useful, but the `null` values will make your
+tests throw `NullPointerExceptions` all over the place. The other half of this
+puzzle is the static method `Mockito.when()`, described in the next section.
+
+== Making mocks return what you want
+
+The `Mockito.mock()` method gives you an object that does absolutely nothing.
+You can use it instead of some big nasty object that has a complicated
+constructor, requires a container, or is just an object that you don't wish to
+care about when you're testing other pieces of your app.
+
+The problem, of course, is that an object that does absolutely nothing
+isn't very useful. We have a stand-in for all the objects that our test
+subject works with, but we still need to control how our test subject behaves,
+which requires input and output to these objects. To tell your mock objects
+how to behave, and still skip over the complicated logic in the class you
+just mocked, you use the static method `Mockito.when()`.
+
+=== "`When,`" Then What?
+
+Mockito's `when()` returns an object that, in itself, we don't care about. We
+only care about the method that we chain on to `when()`, called `thenReturn()`.
+The name of the methods `when().thenReturn()`, chained like that, form the
+basis of the commands that you give to your mock object. Here's a full example:
+
+[source, java]
+----
+@Test
+public void testStubbing() {
+
+  MyObject myMock = mock(MyObject.class);
+  when(myMock.getValue()).thenReturn(42);
+  
+  assertEquals(42, myMock.getValue())
+}
+----
+
+Alarm bells are probably going off in your head. Yes, the syntax is unusual.
+However, this is the most concise way to tell our mock how to behave. In order
+to grasp this command, you have to let go of a little bit of your Java
+knowledge for just a minute. Instead of thinking of `myMock.getValue()` as
+returning any value, think of it as _identifying the method that you want to
+change_.
+
+IMPORTANT: The syntax of `when(mock.method()).thenReturn(value)` is the
+trickiest thing to learn when you are learning Mockito. The argument to `when()`
+is the method call that you're changing. The `thenReturn(value)` tells the
+mock what you want that method to do.
+
+So when we call `when(myMock.getValue()).thenReturn(expectedValue)`, we have
+instructed the mock object `myMock` to return `expectedValue` when its
+`getValue()` method is called. That lasts *for the life of the mock*. That
+means that calling `setValue()` will *not* change the result of `getValue()`.
+
+CAUTION: Mocking an object with getters and setters breaks the contact of those
+getters and setters. Setters will not change any value, and getters will always
+return what you tell them to. If you're ever calling a setter on a mock object,
+it is probably a mistake.
+
+[source, java]
+----
+@Test
+public void thisTestPasses() {
+
+  MyObject myMock = mock(MyObject.class);
+  when(myMock.getValue()).thenReturn(42);
+
+  // The mock will now behave as instructed
+  assertTrue(myMock.getValue() == 42);
+  
+  // This does nothing, since myMock is a mock
+  myMock.setValue(13);
+  
+  // getValue still returns 42!
+  assertTrue(myMock.getValue() == 42);
+}
+----
+
+
+== Anatomy of a JUnit Test Using Mockito
+
+If you're building up a class from scratch (lucky you!) it is worthwhile to try 
+writing your tests such that you can completely control your class's execution
+through the mocks. If your class is designed with easy-to-mock dependencies
+and clear boundaries of responsibilities, then it would be just as easy to
+swap out functionality or make changes to the production code. The mocks are
+clients of your code just as much as the rest of your application!
+
+The following source listing shows a unit test that uses Mockito annotations
+to perform the mocking we just covered.
+
+[source, java]
+.A test class using Mockito annotations
+----
+include::listings/AnnotationsAnatomy.java[]
+----
+<1> The JUnit `@Rule` annotation allows us to use plugins, like Mockito.
+JUnit will call Mockito's setup methods--like the `Mockito.mock()`
+method--automatically.
+<2> We will cover the `@InjectMocks` annotation soon. That tells Mockito which
+class you're testing. Mockito will create that object for you, and then inject
+all the mocks you've created.
+<3> The `@Mock` annotation tells Mockito to put a mock in that field. It uses
+reflection to identify what type to mock, then calls `Mockito.mock()`. This
+even works on interfaces.
+<4> This is the `when().thenReturn()` that we just covered. Note that it is
+perfectly legal to ask one mock to return another.
+
+=== Mockito's JUnit rule
+
+JUnit's `Rule` system is a system for plugins. For any object annotated with
+`@Rule` that implement JUnit's `TestRule` interface, JUnit will call methods
+on that object before and after every test. In Mockito's case, the
+`MockitoJUnit` rule mocks everything annotated with `@Mock`, and sets them
+on whatever object is annotated with `@InjectMocks`. It helps take a lot
+of repetition out of setting up tests.
+
+NOTE: All JUnit rules must be declared `public`.
+
+=== Injecting Mocks
+
+The `@InjectMocks` annotation hides a lot of complexity. It instantiates
+a real (non-mock) instance of the annotated type, then it tries to inject
+all of the mock objects that you've annotated with `@Mock`. Therein lies the
+complexity, in both the annotation and in the work you'll be doing to integrate
+Mockito with your tests: How do you inject mock objects into the class you're
+testing?
+
+Mockito tries three strategies of injection:
+
+ . Constructor injection
+ . Setter injection
+ . Reflection
+ 
+It evaluates the class's constructor, setters, and fields, in that order, and
+picks the first one that will work for all declared mocks.
+
+CAUTION: Mockito does not provide any feedback on which strategy it picked, or
+if it failed to mock anything. If you've set up mocks to be injected, be
+conscious of what strategy you want Mockito use, and make sure that your class
+allows it.
+
+==== Constructor Injection
+
+Mockito first checks if you have a constructor with arguments matching the type
+of *any* mocks you've created. It will try to use the biggest public
+constructor available, and then
+it will construct your class by using that constructor, passing in your mocks
+by matching types. If your have multiple arguments of the same type, you
+can name your mocks. See the Javadoc on Mockito's `@InjectMock` annotation.
+If the biggest constructor has some arguments that you don't have types for,
+Mockito will pass `null` for those values.
+
+TIP: This strategy is my favorite, because it lets you declare your
+dependencies as `final` fields within your class. If you have many `final`
+fields, and one of your constructors doesn't initialize one, then you will get
+a compilation error. I like letting the compiler work in my favor.
+
+[source, java]
+.A class that uses constructor injection
+----
+include::listings/ConstructorInjection.java[]
+----
+
+If your class does not have a constructor that accepts any of the mocks you've
+made, Mockito will try setter injection next.
+
+==== Setter Injection
+
+If you have methods with the name like `setX()` that accept the types of mocks
+you've created, Mockito will instantiate your object using the default
+constructor, then it will call those setters, passing in your mocks. This is
+definitely the most straightforward, and it's very likely that your existing
+code has setters for its dependencies, since that's the Java bean style.
+
+If your class does not have setters for some of your mocks, 

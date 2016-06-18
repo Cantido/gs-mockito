@@ -1,0 +1,18 @@
+= Advanced Topics
+
+[partintro]
+--
+Mockito provides advanced features that, while not often used, can be a
+lifesaver in cases where you just can't pull apart a class enough to
+test. If you've written the production code alongside your tests, it is unlikely
+that you'll need some of these advanced features, but they can dramatically
+decrease the amount of code you have to write in order to test certain kinds
+of functionality.
+
+This part of the guide will cover several features of Mockito that go beyond
+the creation of mocks and stubbing of methods.
+--
+
+== Argument Captors
+
+Coming soon.
