@@ -10,8 +10,7 @@ guide is written for developers who are familiar with Java, and who can write
 a simple JUnit test case, and who want to know how to take their unit testing
 to the next level.
 
-Before you get started learning about how to you use Mockito, here's how
-to get it:
+Before you get started learning about how to you use Mockito, add this to your `pom.xml`:
 
 [source, xml]
 .In the dependencies section of your pom.xml file
@@ -32,23 +31,23 @@ overrides every method to do nothing. Imagine if you had an object like this:
 [source, java]
 ----
 class MyObject {
-  private int value = 0;
-  private MyBean bean;
-  
   public int getValue() {
-    return value;
+    return db.loadValue();
   }
   
   public void setValue(int nextValue) {
-    this.value = nextValue;
+    complicatedValidation(nextValue);
+    db.saveValue(nextValue);
   }
   
   public MyBean getBean() {
+    MyBean bean = MyBean.staticFactoryThatCallsService();
+    bean.longRunningLoad();
     return bean;
   }
   
   public void setBean(MyBean nextBean) {
-    this.bean = nextBean;
+    db.saveValue(nextBean);
   }
 }
 ----
@@ -189,3 +188,102 @@ public void thisTestPasses() {
   assertTrue(myMock.getValue() == 42);
 }
 ----
+
+
+== Anatomy of a JUnit Test Using Mockito
+
+If you're building up a class from scratch (lucky you!) it is worthwhile to try 
+writing your tests such that you can completely control your class's execution
+through the mocks. If your class is designed with easy-to-mock dependencies
+and clear boundaries of responsibilities, then it would be just as easy to
+swap out functionality or make changes to the production code. The mocks are
+clients of your code just as much as the rest of your application!
+
+The following source listing shows a unit test that uses Mockito annotations
+to perform the mocking we just covered.
+
+[source, java]
+.A test class using Mockito annotations
+----
+include::AnnotationsAnatomy.java[]
+----
+<1> The JUnit `@Rule` annotation allows us to use plugins, like Mockito.
+JUnit will call Mockito's setup methods--like the `Mockito.mock()`
+method--automatically.
+<2> We will cover the `@InjectMocks` annotation soon. That tells Mockito which
+class you're testing. Mockito will create that object for you, and then inject
+all the mocks you've created.
+<3> The `@Mock` annotation tells Mockito to put a mock in that field. It uses
+reflection to identify what type to mock, then calls `Mockito.mock()`. This
+even works on interfaces.
+<4> This is the `when().thenReturn()` that we just covered. Note that it is
+perfectly legal to ask one mock to return another.
+
+=== Mockito's JUnit rule
+
+JUnit's `Rule` system is a system for plugins. For any object annotated with
+`@Rule` that implement JUnit's `TestRule` interface, JUnit will call methods
+on that object before and after every test. In Mockito's case, the
+`MockitoJUnit` rule mocks everything annotated with `@Mock`, and sets them
+on whatever object is annotated with `@InjectMocks`. It helps take a lot
+of repetition out of setting up tests.
+
+NOTE: All JUnit rules must be declared `public`.
+
+=== Injecting Mocks
+
+The `@InjectMocks` annotation hides a lot of complexity. It instantiates
+a real (non-mock) instance of the annotated type, then it tries to inject
+all of the mock objects that you've annotated with `@Mock`. Therein lies the
+complexity, in both the annotation and in the work you'll be doing to integrate
+Mockito with your tests: How do you inject mock objects into the class you're
+testing?
+
+Mockito tries three strategies of injection:
+
+ . Constructor injection
+ . Setter injection
+ . Reflection
+ 
+It evaluates the class's constructor, setters, and fields, in that order, and
+picks the first one that will work for all declared mocks.
+
+CAUTION: Mockito does not provide any feedback on which strategy it picked, or
+if it failed to mock anything. If you've set up mocks to be injected, be
+conscious of what strategy you want Mockito use, and make sure that your class
+allows it.
+
+==== Constructor Injection
+
+Mockito first checks if you have a constructor with arguments matching the type
+of *any* mocks you've created. It will try to use the biggest public
+constructor available, and then
+it will construct your class by using that constructor, passing in your mocks
+by matching types. If your have multiple arguments of the same type, you
+can name your mocks. See the Javadoc on Mockito's `@InjectMock` annotation.
+If the biggest constructor has some arguments that you don't have types for,
+Mockito will pass `null` for those values.
+
+TIP: This strategy is my favorite, because it lets you declare your
+dependencies as `final` fields within your class. If you have many `final`
+fields, and one of your constructors doesn't initialize one, then you will get
+a compilation error. I like letting the compiler work in my favor.
+
+[source, java]
+.A class that uses constructor injection
+----
+include::ConstructorInjection.java[]
+----
+
+If your class does not have a constructor that accepts any of the mocks you've
+made, Mockito will try setter injection next.
+
+==== Setter Injection
+
+If you have methods with the name like `setX()` that accept the types of mocks
+you've created, Mockito will instantiate your object using the default
+constructor, then it will call those setters, passing in your mocks. This is
+definitely the most straightforward, and it's very likely that your existing
+code has setters for its dependencies, since that's the Java bean style.
+
+If your class does not have setters for some of your mocks, 
