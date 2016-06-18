@@ -3,9 +3,15 @@ require 'asciidoctor'
 require 'asciidoctor-pdf'
 
 task :default do
-  Asciidoctor.convert_file 'getting-started-with-mockito.adoc',
-                           in_place: true,
-                           doctype: :book,
-                           backend: 'pdf',
-                           safe: :server
+  infile = 'getting-started-with-mockito.adoc'
+  options = {
+              :in_place => true,
+              :doctype => :book,
+              :safe => :server
+            }
+  
+  ['pdf'].each do |format|
+    options[:backend] = format
+    Asciidoctor.convert_file infile, options
+  end
 end
