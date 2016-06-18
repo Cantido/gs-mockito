@@ -3,7 +3,7 @@ require 'asciidoctor'
 require 'asciidoctor-pdf'
 
 task :default do
-  infile = 'getting-started-with-mockito.adoc'
+  infile = 'src/getting-started-with-mockito.adoc'
   options = {
               :in_place => true,
               :doctype => :book,

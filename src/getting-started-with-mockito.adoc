@@ -3,6 +3,8 @@ Robert Richter
 v0.1, June 2015, Written for Mockito 1.10.19
 :toc:
 
+= Mockito from Scratch
+
 Mockito is a framework for creating mock objects in Java. When used in unit
 tests, Mockito makes it significantly easier to isolate the code that you
 actually want to test from everything else that could possibly break. This
@@ -205,7 +207,7 @@ to perform the mocking we just covered.
 [source, java]
 .A test class using Mockito annotations
 ----
-include::AnnotationsAnatomy.java[]
+include::listings/AnnotationsAnatomy.java[]
 ----
 <1> The JUnit `@Rule` annotation allows us to use plugins, like Mockito.
 JUnit will call Mockito's setup methods--like the `Mockito.mock()`
@@ -272,7 +274,7 @@ a compilation error. I like letting the compiler work in my favor.
 [source, java]
 .A class that uses constructor injection
 ----
-include::ConstructorInjection.java[]
+include::listings/ConstructorInjection.java[]
 ----
 
 If your class does not have a constructor that accepts any of the mocks you've
