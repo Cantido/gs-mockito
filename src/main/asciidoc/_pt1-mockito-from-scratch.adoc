@@ -35,18 +35,18 @@ class MyObject {
   public int getValue() {
     return db.loadValue();
   }
-  
+
   public void setValue(int nextValue) {
     complicatedValidation(nextValue);
     db.saveValue(nextValue);
   }
-  
+
   public MyBean getBean() {
     MyBean bean = MyBean.staticFactoryThatCallsService();
     bean.longRunningLoad();
     return bean;
   }
-  
+
   public void setBean(MyBean nextBean) {
     db.saveValue(nextBean);
   }
@@ -83,15 +83,15 @@ class MyObjectMock extends MyObject {
   public int getValue() {
     return 0;
   }
-  
+
   public void setValue(int nextValue) {
     // blank
   }
-  
+
   public MyBean getBean() {
     return null;
   }
-  
+
   public void setBean(MyBean nextBean) {
     // blank
   }
@@ -140,7 +140,7 @@ public void testStubbing() {
 
   MyObject myMock = mock(MyObject.class);
   when(myMock.getValue()).thenReturn(42);
-  
+
   assertEquals(42, myMock.getValue())
 }
 ----
@@ -175,10 +175,10 @@ public void thisTestPasses() {
 
   // The mock will now behave as instructed
   assertTrue(myMock.getValue() == 42);
-  
+
   // This does nothing, since myMock is a mock
   myMock.setValue(13);
-  
+
   // getValue still returns 42!
   assertTrue(myMock.getValue() == 42);
 }
@@ -198,7 +198,7 @@ create mocks.
 [source, java]
 .A test class using Mockito annotations
 ----
-include::listings/AnnotationsAnatomy.java[]
+include::../../test/java/example/AnnotationsAnatomyTest.java[]
 ----
 <1> JUnit's `@Rule` annotation lets us use plugins, like Mockito. This will
 call Mockito's setup methods.
@@ -229,7 +229,7 @@ Mockito tries three strategies of injection:
  . Constructor injection
  . Setter injection
  . Reflection
- 
+
 It evaluates the class's constructor, setters, and fields, in that order.
 Then, it picks the first one that will work for all declared mocks.
 
@@ -255,7 +255,7 @@ a compilation error. I like letting the compiler work in my favor.
 [source, java]
 .A class that uses constructor injection
 ----
-include::listings/ConstructorInjection.java[]
+include::../java/example/AccountRepository.java[]
 ----
 
 If your class does not have a constructor that accepts any of the mocks you've
@@ -269,4 +269,4 @@ constructor, then it will call those setters, passing in your mocks. This is
 definitely the most straightforward, and it's very likely that your existing
 code has setters for its dependencies, since that's the Java bean style.
 
-If your class does not have setters for some of your mocks, 
+If your class does not have setters for some of your mocks,

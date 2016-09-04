@@ -1,0 +1,16 @@
+= Getting Started with Mockito
+Robert Richter
+v0.1, June 2015: Written for Mockito 1.10.19
+:doctype: book
+:source-highlighter: coderay
+:toc:
+
+include::_pt1-mockito-from-scratch.adoc[]
+
+<<<
+
+include::_pt2-retrofitting-for-mockito.adoc[]
+
+<<<
+
+include::_pt3-advanced-topics.adoc[]
