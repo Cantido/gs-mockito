@@ -23,7 +23,7 @@ Before you get started learning about how to you use Mockito, add this to your `
 == Introduction to Mocks
 
 A mock object created by Mockito extends a class and overrides every method to do nothing.
-Imagine if you had an object like this:
+Let's say you have an object like this:
 
 [source, java]
 ----
@@ -49,10 +49,12 @@ class MyObject {
 }
 ----
 
-And imagine that another class of yours used this object.
-You don’t want to worry about what kind of plumbing this object has.
-You just want something to pass around in the class that you actually care about.
-To create a mock of this object, you call the method `Mockito.mock()`:
+It looks like it has static factories, database connections, and other complex operations.
+Other classes and tests don't care about this object's implementation.
+You'll spend more of your time getting this class to work in JUnit than you will writing tests.
+
+In order to get around this mess and move on with testing, we create mocks.
+To create your own mock, call the method `Mockito.mock()`:
 
 [source, java]
 ----
