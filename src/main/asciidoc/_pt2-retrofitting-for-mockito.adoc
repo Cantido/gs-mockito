@@ -2,17 +2,12 @@
 
 [partintro]
 --
-Writing branch new code along with its unit tests is a great way to get
-familiar with the common ways of mocking and dependency injection. You can
-exercise that knowledge and challenge yourself by writing unit tests for code
-that previously did not have it. It's an unfortunate fact that in most cases
-you can't just write unit tests without modifying production code. This part
-of the guide will cover strategies and refactorings that I've found very
-helpful while writing tests for existing code.
+Writing branch new code along with its unit tests is a great way to get familiar with the common ways of mocking and dependency injection.
+You can exercise that knowledge and challenge yourself by writing unit tests for code that previously did not have it.
+It's an unfortunate fact that in most cases you can't just write unit tests without modifying production code.
+This part of the guide will cover strategies and refactorings that I've found very helpful while writing tests for existing code.
 
-This part will be structured around certain problems that make dependency
-injection and isolated testing difficult, followed by strategies to circumvent
-or resolve the problem.
+This part will be structured around certain problems that make dependency injection and isolated testing difficult, followed by strategies to circumvent or resolve the problem.
 --
 
 == Refactoring for Mock Injections

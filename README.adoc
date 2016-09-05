@@ -2,7 +2,9 @@
 Robert Richter <robert.c.richter@gmail.com>
 v0.1, 2016-09-01
 
-This book is an introduction to the Mockito mocking library for Java. You should be familiar with Java and JUnit before reading, but this book will handle it from there. It covers:
+This book is an introduction to the Mockito mocking library for Java.
+You should be familiar with Java and JUnit before reading, but this book will handle it from there.
+It covers:
 
 * Creating simple mocks
 * Strategies for refactoring legacy code for mocking
