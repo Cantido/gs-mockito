@@ -1,4 +1,6 @@
 theme: jekyll-theme-cayman
+name: Getting Started with Mockito
+description: A guide to the Mockito mocking library for Java
 author: Robert Richter
 author_email: robert.c.richter@gmail.com
 baseurl: /gs-mockito
